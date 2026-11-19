@@ -1,0 +1,16 @@
+{
+  "name": "control-ruta-navidena",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Control de ingreso por número de boleta para La Ruta Navideña (Cajasan Guarigua)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}

@@ -1,6 +1,6 @@
 # Control de ingreso · La Ruta Navideña
 
-Página web para registrar el ingreso al evento **La Ruta Navideña** (Cajasan Guarigua, del 26 de noviembre al 11 de enero) a partir del número de la boleta.
+Sistema web para registrar el ingreso al evento **La Ruta Navideña** (Cajasan Guarigua, del 26 de noviembre al 11 de enero) a partir del número de la boleta. Corre completo en **Railway**: un servidor Node que sirve la página y una base de datos PostgreSQL.
 
 - El portero escribe el número y el sistema dice si la boleta está **disponible** o **ya fue usada** (con día, hora, nombre y puerta).
 - Si está disponible, escribe el nombre de la persona y registra. Cada boleta sirve **una sola vez**, cualquier día.
@@ -8,42 +8,48 @@ Página web para registrar el ingreso al evento **La Ruta Navideña** (Cajasan G
 - **Jornadas:** calendario con el conteo por noche, lista de cada día, filtro y Excel del día o general.
 - **Buscar boleta:** quién entró con ella, cuándo y por qué puerta. El administrador puede anular un ingreso mal digitado.
 - Lo que entra antes de las 6:00 a. m. cuenta para la noche anterior.
-- Nada se pierde al recargar: los ingresos están en Supabase y la sesión y lo que se estaba escribiendo quedan en el celular.
+- Nada se pierde al recargar: los ingresos están en la base de datos, y la sesión y lo que se estaba escribiendo quedan guardados en el celular.
 
 ## Archivos
 
 | Archivo | Qué es |
 |---|---|
-| `index.html` | La página completa |
-| `config.js` | URL y anon key de Supabase, fechas del evento |
-| `supabase/schema.sql` | Tablas, funciones y claves de acceso (se ejecuta una vez) |
+| `server.js` | Servidor: API, claves de acceso y creación automática de la tabla |
+| `public/index.html` | La página |
+| `public/config.js` | Fechas del evento |
 
-## Puesta en marcha
+## Despliegue en Railway
 
-### 1. Supabase
-1. Crea un proyecto gratis en [supabase.com](https://supabase.com).
-2. Abre `supabase/schema.sql`, cambia `CLAVE_PORTEROS` y `CLAVE_ADMIN` al final del archivo por las claves que quieras.
-3. En Supabase ve a **SQL Editor**, pega todo el archivo y dale **Run**.
-4. En **Project Settings → API** copia la **Project URL** y la **anon public key**.
+1. En [railway.com](https://railway.com) → **New Project → Deploy from GitHub repo** → elige este repositorio.
+2. En el mismo proyecto: **+ Create → Database → PostgreSQL**.
+3. En el servicio de la app, pestaña **Variables**, agrega:
 
-> No uses ni compartas la **service_role key**. La página solo necesita la anon key, que es pública por diseño: sin la clave de acceso no puede leer ni escribir nada.
+   | Variable | Valor |
+   |---|---|
+   | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` (referencia a la base de datos) |
+   | `CLAVE_PORTEROS` | la clave que usarán los porteros |
+   | `CLAVE_ADMIN` | tu clave de administrador (permite anular ingresos) |
 
-### 2. Configuración
-Edita `config.js` con la URL y la anon key, y haz commit.
+4. Pestaña **Settings → Networking → Generate Domain** para obtener el enlace público.
+5. Al arrancar, el servidor crea la tabla solo. No hay que ejecutar SQL.
 
-### 3. Vercel
-1. En [vercel.com](https://vercel.com) → **Add New → Project** → importa este repositorio.
-2. Framework Preset: **Other**. No necesita build ni variables de entorno.
-3. **Deploy.** Cada push a `main` se publica solo.
+Cada push a `main` se vuelve a desplegar solo.
 
-### 4. Prueba antes del evento
+## Prueba antes del evento
 Con dos celulares: registra una boleta en uno, intenta usarla en el otro (debe salir en rojo) y luego anúlala entrando con la clave de administrador en **Buscar boleta**.
 
 ## Uso diario
-- Cada portero entra con la clave de porteros y el nombre de su puesto (por ejemplo, "Puerta principal · Carlos"). El celular la recuerda hasta tocar **Salir**.
-- La clave de administrador da lo mismo más el botón **Anular este ingreso**.
-- Para cambiar las claves, vuelve a ejecutar en Supabase solo el último bloque de `schema.sql` con las claves nuevas. Todos tendrán que volver a entrar.
+- Cada portero entra con la clave de porteros y el nombre de su puesto (por ejemplo, "Puerta principal · Carlos"). El celular lo recuerda hasta tocar **Salir**.
+- Para cambiar una clave, cámbiala en **Variables** de Railway. Todos tendrán que volver a entrar.
+- Tras 10 claves incorrectas desde una misma conexión, el servidor bloquea esa conexión 10 minutos.
+
+## Probar en tu computador
+
+```bash
+npm install
+DATABASE_URL=postgres://usuario:clave@localhost:5432/basedatos CLAVE_PORTEROS=puerta CLAVE_ADMIN=jefe npm start
+# abre http://localhost:3000
+```
 
 ## Importante
-- Sin internet no se puede validar si una boleta ya entró por otra puerta. Aseguren señal o un módem en la entrada.
-- El plan gratis de Supabase pausa el proyecto tras 7 días **sin uso**. Durante el evento hay uso diario; si lo dejan quieto antes del 26, entren al panel de Supabase y reactívenlo.
+Sin internet no se puede validar si una boleta ya entró por otra puerta. Aseguren señal o un módem en la entrada.
