@@ -4,19 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0B1026">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <title>Control Ruta Navideña</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230B1026'/%3E%3Ctext x='32' y='43' font-size='30' font-family='monospace' font-weight='700' text-anchor='middle' fill='%23F4B740'%3EN%C2%B0%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="config.js"></script>
 <style>
-/* Noche del parque como fondo; la boleta de papel (desprendible "Control de ingreso") es el formulario. Tema oscuro único, pensado para la puerta de noche. */
+/* Noche del parque como fondo; la boleta de papel ("Control de ingreso") es el formulario de la puerta. Tema oscuro único, pensado para trabajar de noche. */
 :root{
   --night:#0B1026; --night-2:#131A3B; --night-3:#1C2550; --line:#2A3366;
   --ink:#EEF0FA; --muted:#9BA4CC; --faint:#6C76A3;
   --lantern:#F4B740; --lantern-ink:#2A1B00;
-  --ok:#36D399; --ok-bg:#0F3B2E; --stop:#FF5C63; --stop-bg:#45141C;
+  --ok:#36D399; --ok-bg:#0F3B2E; --stop:#FF5C63; --stop-bg:#45141C; --warn-bg:#3A2A10;
   --paper:#F7F2E5; --paper-2:#EFE7D2; --paper-ink:#1B2456; --paper-line:#C9BFA3;
   --f-display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;
   --f-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -29,13 +29,15 @@ body{font-family:var(--f-body);font-size:15px;line-height:1.5;min-height:100vh;p
   background:radial-gradient(1200px 500px at 85% -10%,rgba(244,183,64,.10),transparent 60%),radial-gradient(900px 500px at -10% 10%,rgba(76,110,255,.12),transparent 60%),var(--night);background-attachment:fixed}
 [hidden]{display:none!important}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--night)}
-.wrap{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-button,input{font:inherit;color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input,select{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--lantern);outline-offset:2px}
+.mono{font-family:var(--f-num);font-variant-numeric:tabular-nums}
 
-header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:rgba(11,16,38,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-.top .wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-block:12px}
-.brand{display:flex;flex-direction:column;min-width:0;flex:1 1 220px}
+/* Encabezado */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:rgba(11,16,38,.9);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-block:12px}
+.brand{display:flex;flex-direction:column;min-width:0;flex:1 1 200px}
 .eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .brand h1{font-family:var(--f-display);font-weight:800;font-size:22px;line-height:1.1;margin:2px 0 0;letter-spacing:-.01em}
 .brand h1 span{color:var(--lantern)}
@@ -48,37 +50,44 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background
 .dot.on{background:var(--ok);box-shadow:0 0 0 3px rgba(54,211,153,.18)}
 .dot.off{background:var(--stop);box-shadow:0 0 0 3px rgba(255,92,99,.18)}
 nav.tabs{display:flex;gap:4px;padding-block:0 12px;align-items:center;flex-wrap:wrap}
-nav.tabs button{background:transparent;border:1px solid transparent;border-radius:10px;padding:8px 14px;color:var(--muted);font-weight:600;cursor:pointer}
-nav.tabs button[aria-selected="true"]{background:var(--night-3);border-color:var(--line);color:var(--ink)}
-nav.tabs button:hover{color:var(--ink)}
-nav.tabs .who{margin-left:auto;font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:center}
-nav.tabs .who b{color:var(--ink);font-weight:600}
-.link{background:none;border:0;color:var(--lantern);cursor:pointer;font-size:12px;font-weight:600;padding:4px}
+nav.tabs [data-view]{background:transparent;border:1px solid transparent;border-radius:10px;padding:8px 14px;color:var(--muted);font-weight:600;cursor:pointer}
+nav.tabs [data-view][aria-selected="true"]{background:var(--night-3);border-color:var(--line);color:var(--ink)}
+nav.tabs [data-view]:hover{color:var(--ink)}
+.me{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);flex-wrap:wrap}
+.me b{color:var(--ink);font-weight:600}
+.role{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:2px 8px}
+.role.admin{background:rgba(244,183,64,.16);color:var(--lantern)}
+.role.portero{background:rgba(155,164,204,.14);color:var(--muted)}
+.link{background:none;border:0;color:var(--lantern);cursor:pointer;font-size:13px;font-weight:600;padding:4px 6px;border-radius:8px}
+.link.danger{color:var(--stop)}
+.link:hover{background:var(--night-3)}
 
-main{padding-block:24px 64px}
+main{padding-block:24px 72px}
 .notice{border:1px solid var(--line);background:var(--night-2);border-radius:12px;padding:12px 14px;margin-bottom:18px;font-size:14px}
 .notice.bad{border-color:rgba(255,92,99,.5);background:var(--stop-bg)}
-.notice.warn{border-color:rgba(255,180,84,.45);background:#3A2A10}
+.notice.warn{border-color:rgba(255,180,84,.45);background:var(--warn-bg)}
 
-.ingreso{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:24px;align-items:start}
-@media (max-width:820px){.ingreso{grid-template-columns:1fr}}
+/* Boleta (formularios de papel) */
 .stub{position:relative;background:var(--paper);color:var(--paper-ink);border-radius:18px;padding:22px 24px 24px 34px;box-shadow:0 20px 50px rgba(0,0,0,.35)}
 .stub::before{content:"";position:absolute;left:14px;top:18px;bottom:18px;border-left:2px dashed var(--paper-line)}
 .stub::after{content:"";position:absolute;left:-10px;top:50%;width:20px;height:20px;margin-top:-10px;border-radius:50%;background:var(--night)}
 .stub-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .pill{display:inline-block;background:var(--paper-ink);color:var(--paper);font-weight:700;letter-spacing:.08em;font-size:12px;padding:6px 14px;border-radius:999px;text-transform:uppercase}
 .stub-title{font-family:var(--f-display);font-weight:800;font-size:15px;letter-spacing:.02em;text-transform:uppercase;opacity:.75}
-.field{margin-top:18px}
-.field label{display:block;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;opacity:.8}
+.field{margin-top:16px}
+.field > label{display:block;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;opacity:.85}
 .numbox{display:flex;align-items:center;gap:12px;border:2.5px solid var(--paper-ink);border-radius:14px;background:#fff;padding:6px 8px 6px 16px}
 .numbox .no{font-family:var(--f-display);font-weight:800;font-size:28px}
 .numbox input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-family:var(--f-num);font-weight:700;font-size:clamp(34px,7vw,52px);letter-spacing:.06em;color:var(--paper-ink);padding:2px 0}
 .numbox:focus-within{box-shadow:0 0 0 4px rgba(244,183,64,.55)}
-.textbox input{width:100%;border:2px solid var(--paper-line);border-radius:12px;background:#fff;padding:12px 14px;font-size:18px;color:var(--paper-ink);outline:0}
-.textbox input:focus{border-color:var(--paper-ink);box-shadow:0 0 0 4px rgba(244,183,64,.45)}
-.textbox input:disabled{background:var(--paper-2);color:#8A8370}
+.paperin{width:100%;border:2px solid var(--paper-line);border-radius:12px;background:#fff;padding:12px 14px;font-size:18px;color:var(--paper-ink);outline:0}
+.paperin:focus{border-color:var(--paper-ink);box-shadow:0 0 0 4px rgba(244,183,64,.45)}
+.paperin:disabled{background:var(--paper-2);color:#8A8370}
+.passwrap{position:relative}
+.passwrap .paperin{padding-right:84px}
+.passwrap button{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:0;color:var(--paper-ink);font-weight:700;font-size:13px;cursor:pointer;padding:6px 8px;border-radius:8px}
 .actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
-.btn{border:0;border-radius:12px;padding:14px 20px;font-weight:700;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn{border:0;border-radius:12px;padding:14px 20px;font-weight:700;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .btn.primary{background:var(--paper-ink);color:var(--paper);flex:1 1 180px}
 .btn.ghost{background:transparent;color:var(--paper-ink);border:2px solid var(--paper-line)}
@@ -95,14 +104,17 @@ main{padding-block:24px 64px}
 .result.info{background:var(--paper-2);color:var(--paper-ink)}.result.info .ico{background:var(--paper-ink)}
 .result.warn{background:#FFF0D6;color:#5A3A00}.result.warn .ico{background:#D98A00}
 
-.login{max-width:440px;margin:32px auto}
+.login{max-width:440px;margin:28px auto}
 .login p.sub{margin:10px 0 0;font-size:14px;opacity:.8}
 
-.side h2{font-family:var(--f-display);font-weight:700;font-size:18px;margin:0 0 12px;display:flex;justify-content:space-between;align-items:baseline;gap:12px}
-.side h2 small{font-family:var(--f-body);font-weight:500;font-size:13px;color:var(--muted)}
+/* Ingreso */
+.ingreso{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:820px){.ingreso{grid-template-columns:minmax(0,1fr)}}
+.side h2,.h2{font-family:var(--f-display);font-weight:700;font-size:18px;margin:0 0 12px;display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.side h2 small,.h2 small{font-family:var(--f-body);font-weight:500;font-size:13px;color:var(--muted)}
 .feed{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .feed li{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--night-2);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
-.feed li.fresh{animation:pop 1.2s ease-out}
+.feed li.fresh{animation:pop 1.4s ease-out}
 @keyframes pop{0%{background:var(--ok-bg);border-color:var(--ok)}100%{}}
 .feed .n{font-family:var(--f-num);font-weight:700;color:var(--lantern)}
 .feed .who2{min-width:0}
@@ -112,6 +124,7 @@ main{padding-block:24px 64px}
 .empty{border:1px dashed var(--line);border-radius:14px;padding:22px;text-align:center;color:var(--muted);font-size:14px}
 .empty b{color:var(--ink);display:block;font-family:var(--f-display);font-size:16px;margin-bottom:4px}
 
+/* Jornadas */
 .summary{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:18px}
 .stats{display:flex;gap:28px;flex-wrap:wrap}
 .stat .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
@@ -133,17 +146,24 @@ main{padding-block:24px 64px}
 .panel-head h3{margin:0;font-family:var(--f-display);font-size:20px}
 .panel-head h3 small{display:block;font-family:var(--f-body);font-size:13px;color:var(--muted);font-weight:500}
 .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.search{background:var(--night);border:1px solid var(--line);border-radius:10px;padding:9px 12px;min-width:0;width:220px;max-width:100%}
+.din{background:var(--night);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0;width:100%;outline:0}
+.din:focus{border-color:var(--lantern)}
+.search{width:230px;max-width:100%}
 .tablewrap{overflow-x:auto;border-radius:10px}
-table{width:100%;border-collapse:collapse;font-size:14px;min-width:520px}
-th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:8px 10px;border-bottom:1px solid var(--line)}
-td{padding:10px;border-bottom:1px solid rgba(42,51,102,.6)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+table.wide{min-width:560px}
+th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px;border-bottom:1px solid rgba(42,51,102,.6);vertical-align:middle}
 td.n{font-family:var(--f-num);font-weight:700;color:var(--lantern)}
 td.t{font-family:var(--f-num);color:var(--muted);white-space:nowrap}
 tr:last-child td{border-bottom:0}
+tr.off td{opacity:.5}
+
+/* Buscar */
 .buscar{max-width:620px}
 .bigsearch{display:flex;gap:10px;margin-bottom:18px}
-.bigsearch input{flex:1;min-width:0;background:var(--night-2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-family:var(--f-num);font-size:24px;font-weight:700;letter-spacing:.06em}
+.bigsearch input{flex:1;min-width:0;background:var(--night-2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-family:var(--f-num);font-size:24px;font-weight:700;letter-spacing:.06em;outline:0}
+.bigsearch input:focus{border-color:var(--lantern)}
 .card{background:var(--night-2);border:1px solid var(--line);border-radius:16px;padding:20px}
 .card h3{margin:0 0 14px;font-family:var(--f-num);font-size:26px}
 .tag{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:4px 10px;margin-bottom:10px}
@@ -153,8 +173,52 @@ tr:last-child td{border-bottom:0}
 .kv dt{color:var(--muted);font-size:13px}
 .kv dd{margin:0;font-weight:600}
 .confirm{margin-top:14px;padding:12px;border:1px solid rgba(255,92,99,.45);border-radius:12px;background:var(--stop-bg);display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:14px}
+
+/* Usuarios */
+.users{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:900px){.users{grid-template-columns:minmax(0,1fr)}}
+.form .row{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.form label{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.form .hint{font-size:12px;color:var(--faint)}
+.seg{display:flex;background:var(--night);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;background:transparent;border:0;border-radius:8px;padding:8px;font-weight:600;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--night-3);color:var(--ink)}
+.inrow{display:flex;gap:8px}
+.inrow .din{flex:1}
+.cred{margin-top:14px;border:1px solid rgba(54,211,153,.45);background:var(--ok-bg);border-radius:12px;padding:14px}
+.cred h4{margin:0 0 8px;font-family:var(--f-display);font-size:16px}
+.cred dl{display:grid;grid-template-columns:100px minmax(0,1fr);gap:4px 12px;margin:0 0 10px}
+.cred dt{color:var(--muted);font-size:13px}
+.cred dd{margin:0;font-family:var(--f-num);font-weight:700;word-break:break-all}
+.ut{font-size:13.5px}
+.ut td{padding:10px 8px}
+.ut td.acc{text-align:right;white-space:nowrap}
+.ut .last{font-size:12px}
+@media (max-width:700px){
+  .ut thead{display:none}
+  .ut tr.urow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:12px 4px;border-bottom:1px solid rgba(42,51,102,.6)}
+  .ut tr.urow td{padding:0;border:0}
+  .ut tr.urow td.ucell{grid-column:1}
+  .ut tr.urow td.acc{grid-column:2;grid-row:1}
+  .ut tr.urow td.meta{grid-column:1/-1;display:inline}
+  .ut tr.urow .metas{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--muted)}
+  .ut tr.erow td{padding:0 0 12px;border:0}
+}
+@media (min-width:701px){.ut .metas{display:contents}}
+.ut .metas .role{margin-right:8px}
+.ucell b{display:block;font-weight:600}
+.ucell span{font-size:12px;color:var(--muted);font-family:var(--f-num)}
+.state{font-size:12px;font-weight:700}
+.state.on{color:var(--ok)}.state.off{color:var(--stop)}
+.editbox{background:var(--night);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;align-items:end}
+.editbox .row{margin:0}
+.editbox .btns{display:flex;gap:8px;flex-wrap:wrap;grid-column:1/-1}
+.check{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink);text-transform:none;letter-spacing:0;font-weight:500}
+
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--night-3);border:1px solid var(--line);padding:10px 16px;border-radius:12px;font-size:14px;z-index:20;box-shadow:0 10px 30px rgba(0,0,0,.4);max-width:calc(100% - 32px)}
-@media (max-width:480px){.brand h1{font-size:19px}.stub{padding:18px 16px 20px 28px}.stub::before{left:11px}.kv{grid-template-columns:110px minmax(0,1fr)}}
+.boot{display:grid;place-items:center;min-height:40vh;color:var(--muted)}
+@media (max-width:640px){header.top{position:static}.eyebrow{display:none}.me{margin-left:0;width:100%}.top .wrap{gap:10px}}
+@media (max-width:480px){.brand h1{font-size:19px}.stub{padding:18px 16px 20px 28px}.stub::before{left:11px}.kv{grid-template-columns:110px minmax(0,1fr)}.today{padding-left:10px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -166,37 +230,45 @@ tr:last-child td{border-bottom:0}
       <span class="eyebrow">Control de ingreso · Cajasan Guarigua</span>
       <h1>La Ruta <span>Navideña</span></h1>
     </div>
-    <span class="conn"><span class="dot" id="connDot"></span><span id="connTxt">Conectando…</span></span>
-    <div class="today" title="Ingresos de la jornada actual">
+    <span class="conn" id="conn" hidden><span class="dot" id="connDot"></span><span id="connTxt">Conectando…</span></span>
+    <div class="today" id="todayBox" hidden title="Ingresos de la jornada actual, todas las puertas">
       <div class="lbl">Jornada actual<b id="todayLbl">—</b></div>
-      <div class="count" id="todayCount">0</div>
+      <div class="count mono" id="todayCount">0</div>
     </div>
   </div>
   <div class="wrap" id="navWrap" hidden>
-    <nav class="tabs" role="tablist">
+    <nav class="tabs" role="tablist" aria-label="Secciones">
       <button role="tab" aria-selected="true" data-view="ingreso">Ingreso</button>
-      <button role="tab" aria-selected="false" data-view="jornadas">Jornadas</button>
       <button role="tab" aria-selected="false" data-view="buscar">Buscar boleta</button>
-      <span class="who"><span>Puesto: <b id="whoPuesto">—</b><span id="whoRol"></span></span><button class="link" id="btnSalir" type="button">Salir</button></span>
+      <button role="tab" aria-selected="false" data-view="jornadas" data-admin>Jornadas</button>
+      <button role="tab" aria-selected="false" data-view="usuarios" data-admin>Usuarios</button>
+      <span class="me">
+        <b id="meNombre">—</b><span class="role" id="meRol"></span>
+        <span id="salirBox"></span>
+      </span>
     </nav>
   </div>
 </header>
 
 <main class="wrap">
   <div id="notices"></div>
+  <div class="boot" id="boot">Cargando…</div>
 
   <!-- ACCESO -->
   <section id="view-login" hidden>
-    <form class="stub login" id="formLogin" autocomplete="off">
+    <form class="stub login" id="formLogin" autocomplete="on" novalidate>
       <div class="stub-head"><span class="pill">Acceso al control</span></div>
-      <p class="sub">Entra con la clave que te dieron y el nombre de tu puesto. Este celular la recordará hasta que toques "Salir".</p>
-      <div class="field textbox">
-        <label for="inClave">Clave de acceso</label>
-        <input id="inClave" type="password" autocomplete="current-password" required>
+      <p class="sub">Entra con el usuario y la contraseña que te dio el administrador. Este celular mantiene la sesión abierta hasta que toques "Cerrar sesión".</p>
+      <div class="field">
+        <label for="inUsuario">Usuario</label>
+        <input class="paperin" id="inUsuario" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
       </div>
-      <div class="field textbox">
-        <label for="inPuesto">Puesto de entrada</label>
-        <input id="inPuesto" placeholder="Ej.: Puerta principal · Carlos" maxlength="40" required>
+      <div class="field">
+        <label for="inPass">Contraseña</label>
+        <div class="passwrap">
+          <input class="paperin" id="inPass" name="password" type="password" autocomplete="current-password" required>
+          <button type="button" data-toggle="inPass">Mostrar</button>
+        </div>
       </div>
       <div class="actions"><button class="btn primary" id="btnLogin" type="submit">Entrar</button></div>
       <div id="loginMsg" hidden></div>
@@ -214,18 +286,18 @@ tr:last-child td{border-bottom:0}
         <label for="inNum">Número de boleta</label>
         <div class="numbox">
           <span class="no">N.°</span>
-          <input id="inNum" inputmode="numeric" pattern="[0-9]*" maxlength="7" placeholder="0000">
+          <input id="inNum" inputmode="numeric" pattern="[0-9]*" maxlength="7" placeholder="0000" enterkeyhint="go">
         </div>
       </div>
-      <div class="field textbox">
+      <div class="field">
         <label for="inNombre">Nombre de la persona</label>
-        <input id="inNombre" placeholder="Primero verifica la boleta" disabled autocapitalize="words" maxlength="120">
+        <input class="paperin" id="inNombre" placeholder="Primero verifica la boleta" disabled autocapitalize="words" maxlength="120" enterkeyhint="done">
       </div>
       <div class="actions">
         <button class="btn primary" id="btnMain" type="submit" disabled>Verificar boleta</button>
         <button class="btn ghost" id="btnReset" type="button">Limpiar</button>
       </div>
-      <div id="result" hidden></div>
+      <div id="result" hidden aria-live="polite"></div>
     </form>
     <aside class="side">
       <h2>Últimos ingresos <small id="feedMeta"></small></h2>
@@ -234,7 +306,18 @@ tr:last-child td{border-bottom:0}
     </aside>
   </section>
 
-  <!-- JORNADAS -->
+  <!-- BUSCAR -->
+  <section id="view-buscar" class="buscar" hidden>
+    <form class="bigsearch" id="formBuscar" autocomplete="off">
+      <input id="inBuscar" inputmode="numeric" pattern="[0-9]*" maxlength="7" placeholder="N.° de boleta" aria-label="Número de boleta a buscar" enterkeyhint="search">
+      <button class="btn lantern" type="submit">Buscar</button>
+    </form>
+    <div id="buscarOut">
+      <div class="empty"><b>Busca cualquier boleta</b>Verás si ya entró, el nombre de la persona, la jornada, la hora y quién la registró.</div>
+    </div>
+  </section>
+
+  <!-- JORNADAS (admin) -->
   <section id="view-jornadas" hidden>
     <div class="summary">
       <div class="stats">
@@ -242,20 +325,20 @@ tr:last-child td{border-bottom:0}
         <div class="stat"><div class="k">Jornadas con ingresos</div><div class="v" id="stDias">0</div></div>
         <div class="stat"><div class="k">Promedio por jornada</div><div class="v" id="stProm">0</div></div>
       </div>
-      <button class="btn lantern" id="btnXlsGeneral" type="button">Descargar Excel general</button>
+      <button class="btn lantern" id="btnXlsGeneral" type="button">Excel general del evento</button>
     </div>
     <div class="months" id="months"></div>
     <div class="panel">
       <div class="panel-head">
         <h3><span id="dayTitle">—</span><small id="daySub"></small></h3>
         <div class="tools">
-          <input class="search" id="dayFilter" placeholder="Filtrar por número o nombre" aria-label="Filtrar ingresos de la jornada">
-          <button class="btn dark sm" id="btnXlsDia" type="button">Excel del día</button>
+          <input class="din search" id="dayFilter" placeholder="Filtrar por número o nombre" aria-label="Filtrar ingresos de la jornada">
+          <button class="btn dark sm" id="btnXlsDia" type="button">Excel de este día</button>
         </div>
       </div>
       <div class="tablewrap">
-        <table>
-          <thead><tr><th>N.° boleta</th><th>Nombre</th><th>Hora de ingreso</th><th>Puesto</th></tr></thead>
+        <table class="wide">
+          <thead><tr><th>N.° boleta</th><th>Nombre</th><th>Hora de ingreso</th><th>Registrado por</th></tr></thead>
           <tbody id="dayRows"></tbody>
         </table>
       </div>
@@ -263,23 +346,63 @@ tr:last-child td{border-bottom:0}
     </div>
   </section>
 
-  <!-- BUSCAR -->
-  <section id="view-buscar" class="buscar" hidden>
-    <form class="bigsearch" id="formBuscar" autocomplete="off">
-      <input id="inBuscar" inputmode="numeric" pattern="[0-9]*" maxlength="7" placeholder="N.° de boleta" aria-label="Número de boleta a buscar">
-      <button class="btn lantern" type="submit">Buscar</button>
-    </form>
-    <div id="buscarOut">
-      <div class="empty"><b>Busca cualquier boleta</b>Verás si ya entró, el nombre de la persona, la jornada, la hora y el puesto que la registró.</div>
+  <!-- USUARIOS (admin) -->
+  <section id="view-usuarios" hidden>
+    <div class="users">
+      <div class="panel">
+        <h2 class="h2">Nuevo usuario</h2>
+        <form class="form" id="formNuevo" autocomplete="off" novalidate>
+          <div class="row">
+            <label for="nuNombre">Nombre completo</label>
+            <input class="din" id="nuNombre" maxlength="80" placeholder="Ej.: Carlos Rodríguez" autocapitalize="words">
+            <span class="hint">Así aparecerá en los registros de ingreso.</span>
+          </div>
+          <div class="row">
+            <label for="nuUsuario">Usuario</label>
+            <input class="din mono" id="nuUsuario" maxlength="30" placeholder="carlos" autocapitalize="none" autocorrect="off" spellcheck="false">
+            <span class="hint">Con este nombre entra. Sin espacios ni tildes.</span>
+          </div>
+          <div class="row">
+            <label>Rol</label>
+            <div class="seg" id="nuRol">
+              <button type="button" data-rol="portero" aria-pressed="true">Portero</button>
+              <button type="button" data-rol="admin" aria-pressed="false">Administrador</button>
+            </div>
+            <span class="hint" id="nuRolHint">Registra ingresos y busca boletas.</span>
+          </div>
+          <div class="row">
+            <label for="nuPass">Contraseña</label>
+            <div class="inrow">
+              <input class="din mono" id="nuPass" maxlength="100" placeholder="Mínimo 6 caracteres" autocapitalize="none" autocorrect="off" spellcheck="false">
+              <button class="btn dark sm" type="button" id="nuGen">Generar</button>
+            </div>
+          </div>
+          <button class="btn lantern" style="width:100%" type="submit" id="nuBtn">Crear usuario</button>
+          <div id="nuMsg" hidden></div>
+        </form>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Usuarios<small id="usSub"></small></h3>
+          <button class="btn dark sm" type="button" id="usReload">Actualizar</button>
+        </div>
+        <div class="tablewrap">
+          <table class="ut">
+            <thead><tr><th>Nombre</th><th>Rol · estado</th><th>Ingresos</th><th>Último acceso</th><th></th></tr></thead>
+            <tbody id="usRows"></tbody>
+          </table>
+        </div>
+        <div class="empty" id="usEmpty" hidden><b>Cargando usuarios…</b></div>
+      </div>
     </div>
   </section>
 </main>
 
-<div class="toast" id="toast" hidden></div>
+<div class="toast" id="toast" role="status" hidden></div>
 
 <script>
 (() => {
-  const CFG = window.CONFIG || {};
+  'use strict';
   const $ = s => document.querySelector(s);
   const TZ = 'America/Bogota';
   const LS = {
@@ -287,180 +410,234 @@ tr:last-child td{border-bottom:0}
     set(k, v) { try { localStorage.setItem('rn_' + k, v); } catch (e) {} },
     del(k) { try { localStorage.removeItem('rn_' + k); } catch (e) {} }
   };
-  let deviceId = LS.get('device', '');
-  if (!deviceId) { deviceId = 'd' + Math.random().toString(36).slice(2, 10); LS.set('device', deviceId); }
+  const rid = () => { const a = new Uint8Array(12); (window.crypto || {}).getRandomValues ? crypto.getRandomValues(a) : a.forEach((_, i) => a[i] = Math.random() * 256); return Array.from(a, b => b.toString(16).padStart(2, '0')).join(''); };
+  const el = (tag, props, ...kids) => { const e = document.createElement(tag); if (props) for (const k in props) { if (k === 'class') e.className = props[k]; else if (k === 'text') e.textContent = props[k]; else e.setAttribute(k, props[k]); } for (const c of kids) if (c != null) e.append(c); return e; };
 
   // ---------- Fechas ----------
   const toUTC = s => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); };
-  const DIAS = [];
-  for (let t = toUTC(CFG.EVENTO_INICIO || '2026-11-26'); t <= toUTC(CFG.EVENTO_FIN || '2027-01-11'); t += 86400000) DIAS.push(new Date(t).toISOString().slice(0, 10));
   const partsFmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h23' });
-  // Jornada = noche del evento: lo que entra antes de las 6:00 a. m. cuenta para la noche anterior (igual que en la base de datos).
-  function jornadaDe(ts) {
+  function jornadaLocal(ts) {
     const p = Object.fromEntries(partsFmt.formatToParts(new Date(ts)).map(x => [x.type, x.value]));
-    let t = Date.UTC(+p.year, +p.month - 1, +p.day);
-    if (+p.hour < 6) t -= 86400000;
+    let t = Date.UTC(+p.year, +p.month - 1, +p.day); if (+p.hour < 6) t -= 86400000;
     return new Date(t).toISOString().slice(0, 10);
   }
   const horaFmt = new Intl.DateTimeFormat('es-CO', { timeZone: TZ, hour: 'numeric', minute: '2-digit', hour12: true });
   const hora = ts => horaFmt.format(new Date(ts)).replace(/\s/g, ' ');
+  const fechaHoraFmt = new Intl.DateTimeFormat('es-CO', { timeZone: TZ, day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true });
   const WD = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
   const WDL = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
   const MES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
   const dParts = f => { const d = new Date(toUTC(f)); return { wd: d.getUTCDay(), d: d.getUTCDate(), m: d.getUTCMonth(), y: d.getUTCFullYear() }; };
   const fechaLarga = f => { const p = dParts(f); return `${WDL[p.wd]} ${p.d} de ${MES[p.m]}`; };
   const fechaCorta = f => { const p = dParts(f); return `${WD[p.wd]} ${p.d} ${MES[p.m].slice(0, 3)}`; };
-  if (DIAS.length) { const a = dParts(DIAS[0]), b = dParts(DIAS[DIAS.length - 1]); $('#stubFechas').textContent = `${a.d} ${MES[a.m].slice(0, 3)} — ${b.d} ${MES[b.m].slice(0, 3)}`; }
-
   const normNum = s => String(s || '').replace(/\D/g, '').replace(/^0+/, '');
   const fmtNum = n => String(n).padStart(4, '0');
 
-  // ---------- API (servidor en Railway) ----------
-  async function rpc(fn, args, ms = 12000) {
-    const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), ms);
-    try {
-      const r = await fetch('/api/' + fn, {
-        method: 'POST', signal: ctl.signal,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(args)
-      });
-      const body = await r.json().catch(() => null);
-      if (!r.ok) throw { code: (body && body.message) || ('http_' + r.status) };
-      setConn('on');
-      return body;
-    } catch (e) {
-      if (e && e.code) throw e;
-      setConn('off');
-      throw { code: 'sin_conexion' };
-    } finally { clearTimeout(t); }
-  }
-  const errMsg = e => {
-    const c = e && e.code;
-    if (c === 'sin_conexion') return 'No hay conexión. Revisa la señal e intenta de nuevo.';
-    if (c === 'clave_invalida') return 'La clave de acceso ya no es válida. Vuelve a entrar.';
-    if (c === 'solo_admin') return 'Solo el administrador puede hacer esto.';
-    if (c === 'numero_invalido') return 'El número de boleta no es válido.';
-    if (c === 'nombre_vacio') return 'Escribe el nombre de la persona.';
-    if (c === 'demasiados_intentos') return 'Demasiadas claves incorrectas desde esta conexión. Espera 10 minutos.';
-    return 'No se pudo completar. Intenta de nuevo.';
-  };
-
   // ---------- Estado ----------
   const S = {
-    clave: LS.get('clave', ''), rol: LS.get('rol', ''), puesto: LS.get('puesto', ''),
-    conteo: {},           // fecha -> total
-    feed: [],             // últimos de la jornada actual
-    dia: { fecha: null, rows: [], loaded: false },
-    selDay: null, view: LS.get('tab', 'ingreso'),
-    step: 'num', checked: null, fresh: new Set()
+    token: LS.get('token', ''),
+    user: (() => { try { return JSON.parse(LS.get('user', 'null')); } catch (e) { return null; } })(),
+    evento: (() => { try { return JSON.parse(LS.get('evento', 'null')); } catch (e) { return null; } })() || { inicio: '2026-11-26', fin: '2027-01-11' },
+    view: LS.get('tab', 'ingreso'),
+    hoy: jornadaLocal(Date.now()), totalHoy: 0, recientes: [], conteo: {},
+    dia: { fecha: null, rows: [], loaded: false }, selDay: null,
+    step: 'num', checked: null, solicitud: LS.get('solicitud', ''), fresh: new Set(),
+    usuarios: [], editId: null, nuRol: 'portero'
   };
+  let DIAS = [];
+  function calcDias() {
+    DIAS = [];
+    for (let t = toUTC(S.evento.inicio); t <= toUTC(S.evento.fin); t += 86400000) DIAS.push(new Date(t).toISOString().slice(0, 10));
+    const a = dParts(DIAS[0]), b = dParts(DIAS[DIAS.length - 1]);
+    $('#stubFechas').textContent = `${a.d} ${MES[a.m].slice(0, 3)} — ${b.d} ${MES[b.m].slice(0, 3)}`;
+  }
+  calcDias();
+  const isAdmin = () => !!S.user && S.user.rol === 'admin';
 
-  // ---------- UI helpers ----------
+  // ---------- Red ----------
+  const MSG = {
+    sin_conexion: 'No hay conexión con el servidor. Revisa la señal e intenta de nuevo.',
+    credenciales: 'Usuario o contraseña incorrectos.',
+    demasiados_intentos: 'Demasiados intentos fallidos. Espera unos minutos e intenta de nuevo.',
+    solo_admin: 'Solo un administrador puede hacer esto.',
+    numero_invalido: 'El número de boleta no es válido.',
+    nombre_vacio: 'Escribe el nombre.',
+    usuario_invalido: 'El usuario solo puede tener letras sin tildes, números, punto, guion o guion bajo (de 2 a 30 caracteres).',
+    usuario_existe: 'Ya existe un usuario con ese nombre de usuario. Elige otro.',
+    clave_corta: 'La contraseña debe tener al menos 6 caracteres.',
+    clave_larga: 'La contraseña es demasiado larga.',
+    ultimo_admin: 'Debe quedar al menos un administrador activo.',
+    propio: 'No puedes desactivarte ni quitarte el rol de administrador a ti mismo.',
+    reintentar: 'La boleta cambió justo ahora. Verifícala de nuevo.',
+    error_servidor: 'El servidor tuvo un problema. Intenta de nuevo en unos segundos.'
+  };
+  const errMsg = e => MSG[e && e.code] || 'No se pudo completar. Intenta de nuevo.';
+
+  async function api(fn, body, opts) {
+    opts = opts || {};
+    const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), opts.ms || 15000);
+    try {
+      let r;
+      try {
+        r = await fetch('/api/' + fn, {
+          method: 'POST', signal: ctl.signal, cache: 'no-store',
+          headers: Object.assign({ 'Content-Type': 'application/json' }, S.token ? { Authorization: 'Bearer ' + S.token } : {}),
+          body: JSON.stringify(body || {})
+        });
+      } catch (e) { setConn('off'); throw { code: 'sin_conexion' }; }
+      if (r.status >= 500 && r.status !== 503) setConn('on'); else if (r.status === 503) setConn('off'); else setConn('on');
+      if (r.status === 401 && fn !== 'login') { sesionPerdida(); throw { code: 'sesion' }; }
+      if (!r.ok) { const b = await r.json().catch(() => null); throw { code: (b && b.error) || ('http_' + r.status) }; }
+      try { return opts.blob ? await r.blob() : await r.json(); }
+      catch (e) { setConn('off'); throw { code: 'sin_conexion' }; }
+    } finally { clearTimeout(t); }
+  }
+
+  // ---------- UI básicos ----------
   let toastT;
-  function toast(msg) { const el = $('#toast'); el.textContent = msg; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 3200); }
-  function notice(text, kind) {
-    const n = $('#notices'); n.innerHTML = '';
-    if (!text) return;
-    const d = document.createElement('div'); d.className = 'notice ' + (kind || ''); d.textContent = text; n.appendChild(d);
+  function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3500); }
+  function notice(text, kind) { const n = $('#notices'); n.innerHTML = ''; if (text) n.append(el('div', { class: 'notice ' + (kind || ''), text })); }
+  let connState = '';
+  function setConn(s) {
+    if (s === connState) return; connState = s;
+    $('#connDot').className = 'dot ' + (s === 'on' ? 'on' : s === 'off' ? 'off' : '');
+    $('#connTxt').textContent = s === 'on' ? 'En línea' : s === 'off' ? 'Sin conexión' : 'Conectando…';
+    if (s === 'on') notice('');
+    if (s === 'off' && S.token) notice('Sin conexión con el servidor. Mientras no vuelva la señal no se puede saber si una boleta ya entró por otra puerta.', 'bad');
   }
-  function setConn(state) {
-    $('#connDot').className = 'dot ' + (state === 'on' ? 'on' : state === 'off' ? 'off' : '');
-    $('#connTxt').textContent = state === 'on' ? 'En línea' : state === 'off' ? 'Sin conexión' : 'Conectando…';
+  function showResult(box, kind, icon, title, text) {
+    box.hidden = false; box.className = 'result ' + kind; box.innerHTML = '';
+    box.append(el('div', { class: 'ico', text: icon }), el('div', null, el('h3', { text: title }), el('p', { text: text || '' })));
   }
-  function showResult(el, kind, icon, title, text) {
-    el.hidden = false; el.className = 'result ' + kind; el.innerHTML = '';
-    const ico = document.createElement('div'); ico.className = 'ico'; ico.textContent = icon;
-    const box = document.createElement('div');
-    const h = document.createElement('h3'); h.textContent = title;
-    const p = document.createElement('p'); p.textContent = text || '';
-    box.append(h, p); el.append(ico, box);
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-toggle]'); if (!b) return;
+    const i = document.getElementById(b.dataset.toggle); const show = i.type === 'password';
+    i.type = show ? 'text' : 'password'; b.textContent = show ? 'Ocultar' : 'Mostrar';
+  });
+
+  // ---------- Vistas ----------
+  function showView(v) {
+    $('#boot').hidden = true;
+    const logged = !!S.token && !!S.user;
+    if (!logged) v = 'login';
+    else if (v === 'login') v = 'ingreso';
+    if ((v === 'jornadas' || v === 'usuarios') && !isAdmin()) v = 'ingreso';
+    S.view = v;
+    $('#navWrap').hidden = !logged; $('#conn').hidden = !logged; $('#todayBox').hidden = !logged;
+    document.querySelectorAll('[data-admin]').forEach(b => b.hidden = !isAdmin());
+    document.querySelectorAll('nav.tabs [data-view]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.view === v)));
+    for (const id of ['login', 'ingreso', 'buscar', 'jornadas', 'usuarios']) $('#view-' + id).hidden = id !== v;
+    if (v !== 'login') LS.set('tab', v);
+    if (v === 'ingreso') setTimeout(() => (S.step === 'free' ? $('#inNombre') : $('#inNum')).focus(), 30);
+    if (v === 'login') setTimeout(() => ($('#inUsuario').value ? $('#inPass') : $('#inUsuario')).focus(), 30);
+    if (v === 'buscar') setTimeout(() => $('#inBuscar').focus(), 30);
+    if (v === 'jornadas') { render(); loadDay(true); }
+    if (v === 'usuarios') loadUsuarios();
+  }
+  document.querySelectorAll('nav.tabs [data-view]').forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
+
+  function paintMe() {
+    if (!S.user) return;
+    $('#meNombre').textContent = S.user.nombre;
+    const r = $('#meRol'); r.className = 'role ' + S.user.rol; r.textContent = S.user.rol === 'admin' ? 'Administrador' : 'Portero';
   }
 
   // ---------- Sesión ----------
-  function loggedIn() { return !!(S.clave && S.rol); }
-  function showView(v) {
-    if (!loggedIn()) v = 'login';
-    S.view = v;
-    $('#navWrap').hidden = !loggedIn();
-    for (const b of document.querySelectorAll('nav.tabs button[data-view]')) b.setAttribute('aria-selected', String(b.dataset.view === v));
-    for (const id of ['login', 'ingreso', 'jornadas', 'buscar']) $('#view-' + id).hidden = id !== v;
-    if (v !== 'login') LS.set('tab', v);
-    if (v === 'ingreso') setTimeout(() => $('#inNum').focus(), 30);
-    if (v === 'login') setTimeout(() => $('#inClave').focus(), 30);
-    if (v === 'jornadas') loadDay(true);
+  function guardarSesion(d) {
+    S.token = d.token || S.token; S.user = d.usuario; if (d.evento) S.evento = d.evento;
+    LS.set('token', S.token); LS.set('user', JSON.stringify(S.user)); LS.set('evento', JSON.stringify(S.evento));
+    calcDias(); paintMe();
   }
-  document.querySelectorAll('nav.tabs button[data-view]').forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
-
-  function salir(msg) {
-    S.clave = ''; S.rol = ''; LS.del('clave'); LS.del('rol');
-    showView('login');
-    if (msg) { const m = $('#loginMsg'); showResult(m, 'warn', '!', 'Vuelve a entrar', msg); }
+  function limpiarSesion() {
+    S.token = ''; S.user = null; S.conteo = {}; S.recientes = []; S.usuarios = [];
+    LS.del('token'); LS.del('user');
   }
-  $('#btnSalir').addEventListener('click', () => salir());
+  function sesionPerdida() {
+    if (!S.token) return;
+    limpiarSesion(); showView('login');
+    showResult($('#loginMsg'), 'warn', '!', 'Tu sesión se cerró', 'El administrador cambió tu acceso o tu contraseña. Vuelve a entrar.');
+  }
 
-  $('#inPuesto').value = S.puesto;
   $('#formLogin').addEventListener('submit', async e => {
     e.preventDefault();
-    const clave = $('#inClave').value, puesto = $('#inPuesto').value.trim();
-    const msg = $('#loginMsg');
-    if (!clave || !puesto) return;
-    $('#btnLogin').disabled = true; $('#btnLogin').textContent = 'Verificando…';
+    const usuario = $('#inUsuario').value.trim(), password = $('#inPass').value, msg = $('#loginMsg');
+    if (!usuario || !password) { showResult(msg, 'warn', '!', 'Faltan datos', 'Escribe tu usuario y tu contraseña.'); return; }
+    const btn = $('#btnLogin'); btn.disabled = true; btn.textContent = 'Entrando…';
     try {
-      const rol = await rpc('verificar_clave', { p_clave: clave });
-      if (!rol) { showResult(msg, 'stop', '✕', 'Clave incorrecta', 'Revisa la clave con el administrador del evento.'); return; }
-      S.clave = clave; S.rol = rol; S.puesto = puesto;
-      LS.set('clave', clave); LS.set('rol', rol); LS.set('puesto', puesto);
-      $('#inClave').value = ''; msg.hidden = true;
-      paintWho(); showView(LS.get('tab', 'ingreso')); refresh();
-    } catch (err) { showResult(msg, 'warn', '!', 'No se pudo entrar', errMsg(err)); }
-    finally { $('#btnLogin').disabled = false; $('#btnLogin').textContent = 'Entrar'; }
+      const d = await api('login', { usuario, password });
+      guardarSesion(d); $('#inPass').value = ''; msg.hidden = true;
+      LS.set('lastUser', usuario);
+      showView(isAdmin() ? LS.get('tab', 'ingreso') : 'ingreso');
+      refresh(true);
+    } catch (err) { showResult(msg, err.code === 'credenciales' ? 'stop' : 'warn', '!', err.code === 'credenciales' ? 'No se pudo entrar' : 'Intenta de nuevo', errMsg(err)); }
+    finally { btn.disabled = false; btn.textContent = 'Entrar'; }
   });
-  function paintWho() {
-    $('#whoPuesto').textContent = S.puesto || '—';
-    $('#whoRol').textContent = S.rol === 'admin' ? ' · administrador' : '';
+
+  // Cerrar sesión con confirmación en línea
+  function btnSalirNuevo() {
+    const b = el('button', { class: 'link', id: 'btnSalir', type: 'button', text: 'Cerrar sesión' });
+    b.addEventListener('click', () => {
+      const box = $('#salirBox'); box.innerHTML = '';
+      const si = el('button', { class: 'link danger', type: 'button', text: 'Sí, cerrar sesión' });
+      const no = el('button', { class: 'link', type: 'button', text: 'Cancelar' });
+      box.append(el('span', { text: '¿Cerrar sesión en este celular?' }), si, no);
+      no.addEventListener('click', () => { box.innerHTML = ''; box.append(btnSalirNuevo()); });
+      si.addEventListener('click', async () => {
+        try { await api('logout', {}, { ms: 5000 }); } catch (e) {}
+        limpiarSesion(); box.innerHTML = ''; box.append(btnSalirNuevo()); showView('login');
+      });
+    });
+    return b;
   }
-  function handleAuthError(err) { if (err && err.code === 'clave_invalida') { salir('La clave cambió o ya no es válida.'); return true; } return false; }
 
   // ---------- Ingreso ----------
   const inNum = $('#inNum'), inNombre = $('#inNombre'), btnMain = $('#btnMain'), result = $('#result');
+  let busy = false;
   function setStep(step) {
     S.step = step;
     inNombre.disabled = step !== 'free';
-    inNombre.placeholder = step === 'free' ? 'Escribe el nombre y confirma' : 'Primero verifica la boleta';
+    inNombre.placeholder = step === 'free' ? 'Escribe el nombre y registra' : 'Primero verifica la boleta';
+    if (busy) return;
     if (step === 'free') { btnMain.textContent = 'Registrar ingreso'; btnMain.disabled = !inNombre.value.trim(); }
     else { btnMain.textContent = 'Verificar boleta'; btnMain.disabled = !normNum(inNum.value) || step === 'used'; }
   }
-  function clearDraft() { LS.del('draftNum'); LS.del('draftNombre'); }
-  $('#btnReset').addEventListener('click', () => { inNum.value = ''; inNombre.value = ''; S.checked = null; clearDraft(); result.hidden = true; setStep('num'); inNum.focus(); });
+  function guardarBorrador() {
+    LS.set('draftNum', inNum.value); LS.set('draftNombre', inNombre.value);
+    LS.set('draftChecked', S.checked || ''); LS.set('solicitud', S.solicitud || '');
+  }
+  function limpiarFormulario() {
+    inNum.value = ''; inNombre.value = ''; S.checked = null; S.solicitud = '';
+    guardarBorrador(); setStep('num');
+  }
+  $('#btnReset').addEventListener('click', () => { limpiarFormulario(); result.hidden = true; inNum.focus(); });
   inNum.addEventListener('input', () => {
-    const clean = inNum.value.replace(/\D/g, '');
-    if (clean !== inNum.value) inNum.value = clean;
-    LS.set('draftNum', clean);
-    if (S.step !== 'num') { result.hidden = true; inNombre.value = ''; LS.del('draftNombre'); S.checked = null; }
-    setStep('num');
+    const clean = inNum.value.replace(/\D/g, ''); if (clean !== inNum.value) inNum.value = clean;
+    if (S.step !== 'num') { result.hidden = true; inNombre.value = ''; S.checked = null; S.solicitud = ''; }
+    guardarBorrador(); setStep('num');
   });
-  inNombre.addEventListener('input', () => { LS.set('draftNombre', inNombre.value); setStep(S.step); });
-  $('#formIngreso').addEventListener('submit', e => { e.preventDefault(); if (btnMain.disabled) return; S.step === 'free' ? registrar() : verificar(); });
+  inNombre.addEventListener('input', () => { guardarBorrador(); setStep(S.step); });
+  $('#formIngreso').addEventListener('submit', e => { e.preventDefault(); if (busy || btnMain.disabled) return; S.step === 'free' ? registrar() : verificar(); });
 
-  const usadaTxt = d => `Entró el ${fechaLarga(d.jornada).toLowerCase()} a las ${hora(d.ts)}, a nombre de ${d.nombre}${d.puesto ? ' · ' + d.puesto : ''}.`;
+  const usadaTxt = d => `Entró el ${fechaLarga(d.jornada).toLowerCase()} a las ${hora(d.ts)}, a nombre de ${d.nombre}. La registró ${d.por || '—'}.`;
 
   async function verificar() {
     const n = normNum(inNum.value); if (!n) return;
-    btnMain.disabled = true; btnMain.textContent = 'Verificando…';
+    busy = true; btnMain.disabled = true; btnMain.textContent = 'Verificando…';
     try {
-      const d = await rpc('consultar_boleta', { p_clave: S.clave, p_num: n });
+      const d = await api('consultar', { num: n });
+      busy = false;
       if (d.estado === 'usada') {
-        S.checked = null;
+        S.checked = null; S.solicitud = '';
         showResult(result, 'stop', '✕', `Boleta ${fmtNum(n)} ya fue usada`, usadaTxt(d));
-        setStep('used'); setTimeout(() => inNum.select(), 30);
+        setStep('used'); guardarBorrador(); setTimeout(() => inNum.select(), 30);
       } else {
-        S.checked = n;
+        S.checked = n; S.solicitud = rid();
         showResult(result, 'info', '✓', `Boleta ${fmtNum(n)} disponible`, 'Escribe el nombre de la persona y registra el ingreso.');
-        inNombre.value = LS.get('draftNombre', '');
-        setStep('free'); inNombre.focus();
+        setStep('free'); guardarBorrador(); inNombre.focus();
       }
     } catch (err) {
-      if (handleAuthError(err)) return;
+      busy = false;
+      if (err.code === 'sesion') return;
       showResult(result, 'warn', '!', 'No se pudo verificar', errMsg(err)); setStep('num');
     }
   }
@@ -468,142 +645,153 @@ tr:last-child td{border-bottom:0}
   async function registrar() {
     const n = S.checked, nombre = inNombre.value.trim().replace(/\s+/g, ' ');
     if (!n || !nombre) return;
-    btnMain.disabled = true; btnMain.textContent = 'Registrando…';
+    if (!S.solicitud) S.solicitud = rid();
+    guardarBorrador();
+    busy = true; btnMain.disabled = true; btnMain.textContent = 'Registrando…';
     try {
-      const d = await rpc('registrar_ingreso', { p_clave: S.clave, p_num: n, p_nombre: nombre, p_puesto: S.puesto, p_dispositivo: deviceId });
+      const d = await api('registrar', { num: n, nombre, solicitud: S.solicitud });
+      busy = false;
       if (d.estado === 'usada') {
-        showResult(result, 'stop', '✕', `Boleta ${fmtNum(n)} ya fue usada`, usadaTxt(d) + ' Otro puesto la registró primero.');
-        setStep('used'); return;
+        showResult(result, 'stop', '✕', `Boleta ${fmtNum(n)} ya fue usada`, usadaTxt(d) + ' Otra puerta la registró primero.');
+        S.checked = null; S.solicitud = ''; inNombre.value = ''; setStep('used'); guardarBorrador(); return;
       }
-      showResult(result, 'ok', '✓', `Ingreso registrado · ${fmtNum(n)}`, `${d.nombre} · ${hora(d.ts)}. Esta boleta ya no se puede volver a usar.`);
-      S.fresh.add(n);
-      S.feed = [d, ...S.feed.filter(x => x.num !== n)].slice(0, 14);
+      showResult(result, 'ok', '✓', `Ingreso registrado · ${fmtNum(n)}`, `${d.nombre} · ${hora(d.ts)} · Esta boleta ya no se puede volver a usar.`);
+      S.fresh.add(d.num);
+      S.recientes = [d, ...S.recientes.filter(x => x.num !== d.num)].slice(0, 15);
+      if (d.jornada === S.hoy) S.totalHoy++;
       S.conteo[d.jornada] = (S.conteo[d.jornada] || 0) + 1;
-      inNum.value = ''; inNombre.value = ''; S.checked = null; clearDraft();
-      setStep('num'); render(); inNum.focus();
-      setTimeout(refresh, 600);
+      limpiarFormulario(); renderTop(); renderFeed(); inNum.focus();
+      setTimeout(() => refresh(), 800);
     } catch (err) {
-      if (handleAuthError(err)) return;
-      showResult(result, 'warn', '!', 'No se registró el ingreso', errMsg(err) + ' La boleta sigue sin usar.');
+      busy = false;
+      if (err.code === 'sesion') return;
+      if (err.code === 'sin_conexion') showResult(result, 'warn', '!', 'No se confirmó el registro', 'Se cortó la conexión. Toca "Registrar ingreso" otra vez: si ya había quedado guardado, no se duplica.');
+      else if (err.code === 'reintentar') { showResult(result, 'warn', '!', 'Verifica de nuevo', errMsg(err)); S.checked = null; S.solicitud = ''; setStep('num'); guardarBorrador(); return; }
+      else showResult(result, 'warn', '!', 'No se registró el ingreso', errMsg(err));
       setStep('free');
     }
   }
 
   // ---------- Datos en vivo ----------
-  let refreshing = false;
-  async function refresh() {
-    if (!loggedIn() || refreshing || document.hidden) return;
+  let refreshing = false, fallosSeguidos = 0, nextTimer = null;
+  async function refresh(force) {
+    if (!S.token || (document.hidden && !force)) { programar(); return; }
+    if (refreshing) return;
     refreshing = true;
     try {
-      const hoy = jornadaDe(Date.now());
-      const [conteo, feed] = await Promise.all([
-        rpc('conteo_jornadas', { p_clave: S.clave }),
-        rpc('listar_jornada', { p_clave: S.clave, p_fecha: hoy, p_limite: 14 })
-      ]);
-      S.conteo = {}; for (const c of conteo) S.conteo[c.jornada] = c.total;
-      S.feed = feed;
-      notice('');
-      render();
-      if (S.view === 'jornadas') await loadDay(false);
-    } catch (err) {
-      if (!handleAuthError(err)) notice('Sin conexión con la base de datos. Sin internet no se puede saber si una boleta ya entró por otra puerta.', 'bad');
-    } finally { refreshing = false; }
+      const d = await api('estado', {}, { ms: 12000 });
+      fallosSeguidos = 0;
+      S.hoy = d.hoy; S.totalHoy = d.totalHoy; S.recientes = d.recientes;
+      if (d.conteo) S.conteo = d.conteo;
+      renderTop(); renderFeed();
+      if (S.view === 'jornadas') { render(); if (S.selDay === S.hoy) loadDay(false); }
+    } catch (err) { fallosSeguidos++; }
+    finally { refreshing = false; programar(); }
   }
-  setInterval(refresh, 5000);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) { refresh(); wake(); } });
-  window.addEventListener('online', refresh);
+  function programar() {
+    clearTimeout(nextTimer);
+    const ms = fallosSeguidos ? Math.min(30000, 3000 * fallosSeguidos) : 5000;
+    nextTimer = setTimeout(refresh, ms);
+  }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { refresh(true); wake(); } });
+  window.addEventListener('online', () => refresh(true));
+  window.addEventListener('focus', () => refresh(true));
 
-  async function loadDay(showLoading) {
-    const f = S.selDay; if (!f || !loggedIn()) return;
-    if (showLoading && S.dia.fecha !== f) { S.dia = { fecha: f, rows: [], loaded: false }; renderDay(); }
-    try {
-      const rows = await rpc('listar_jornada', { p_clave: S.clave, p_fecha: f, p_limite: null }, 20000);
-      if (S.selDay !== f) return;
-      S.dia = { fecha: f, rows, loaded: true };
-      renderDay();
-    } catch (err) { handleAuthError(err); }
+  async function validarSesion() {
+    try { const d = await api('yo', {}, { ms: 10000 }); guardarSesion(d); document.querySelectorAll('[data-admin]').forEach(b => b.hidden = !isAdmin()); if ((S.view === 'jornadas' || S.view === 'usuarios') && !isAdmin()) showView('ingreso'); }
+    catch (e) { /* sin señal: se mantiene la sesión guardada */ }
   }
 
   // ---------- Render ----------
-  function render() {
-    const hoy = jornadaDe(Date.now());
-    const enRango = DIAS.includes(hoy);
-    $('#todayLbl').textContent = enRango ? fechaCorta(hoy) : (hoy < DIAS[0] ? 'Inicia ' + fechaCorta(DIAS[0]) : 'Evento finalizado');
-    $('#todayCount').textContent = (S.conteo[hoy] || 0).toLocaleString('es-CO');
-
+  function renderTop() {
+    const enRango = DIAS.includes(S.hoy);
+    $('#todayLbl').textContent = fechaCorta(S.hoy) + (enRango ? '' : (S.hoy < DIAS[0] ? ' · antes del evento' : ' · fuera del evento'));
+    $('#todayCount').textContent = S.totalHoy.toLocaleString('es-CO');
+  }
+  function renderFeed() {
     const feed = $('#feed'); feed.innerHTML = '';
-    $('#feedEmpty').hidden = S.feed.length > 0;
-    $('#feedMeta').textContent = S.feed.length ? fechaCorta(hoy) : '';
-    for (const e of S.feed) {
-      const li = document.createElement('li');
-      if (S.fresh.has(e.num)) { li.className = 'fresh'; S.fresh.delete(e.num); }
-      const n = document.createElement('span'); n.className = 'n'; n.textContent = fmtNum(e.num);
-      const who = document.createElement('div'); who.className = 'who2';
-      const b = document.createElement('b'); b.textContent = e.nombre;
-      const s = document.createElement('span'); s.textContent = e.puesto;
-      who.append(b, s);
-      const t = document.createElement('span'); t.className = 't'; t.textContent = hora(e.ts);
-      li.append(n, who, t); feed.appendChild(li);
+    $('#feedEmpty').hidden = S.recientes.length > 0;
+    $('#feedMeta').textContent = S.recientes.length ? fechaCorta(S.hoy) : '';
+    for (const e of S.recientes) {
+      const li = el('li', S.fresh.has(e.num) ? { class: 'fresh' } : null,
+        el('span', { class: 'n', text: fmtNum(e.num) }),
+        el('div', { class: 'who2' }, el('b', { text: e.nombre }), el('span', { text: e.por || '' })),
+        el('span', { class: 't', text: hora(e.ts) }));
+      S.fresh.delete(e.num);
+      feed.append(li);
     }
-
+  }
+  function render() {
+    if (!isAdmin()) return;
     let total = 0, conDatos = 0;
     for (const k in S.conteo) { total += S.conteo[k]; if (S.conteo[k]) conDatos++; }
     $('#stTotal').textContent = total.toLocaleString('es-CO');
     $('#stDias').textContent = conDatos + ' / ' + DIAS.length;
     $('#stProm').textContent = conDatos ? Math.round(total / conDatos).toLocaleString('es-CO') : '0';
-
-    if (!S.selDay) S.selDay = enRango ? hoy : (hoy < DIAS[0] ? DIAS[0] : DIAS[DIAS.length - 1]);
+    // Días del evento + cualquier día con registros fuera de ese rango (por ejemplo, pruebas antes del evento).
+    const visibles = Array.from(new Set([...DIAS, ...Object.keys(S.conteo).filter(k => S.conteo[k] > 0)])).sort();
+    const enRango = visibles.includes(S.hoy);
+    if (!S.selDay) S.selDay = enRango ? S.hoy : (S.hoy < DIAS[0] ? DIAS[0] : DIAS[DIAS.length - 1]);
     const months = $('#months'); months.innerHTML = '';
     const groups = [];
-    for (const f of DIAS) {
-      const p = dParts(f); const key = p.y + '-' + p.m;
-      let g = groups.find(x => x.key === key);
-      if (!g) { g = { key, label: MES[p.m] + ' ' + p.y, days: [] }; groups.push(g); }
-      g.days.push(f);
-    }
+    for (const f of visibles) { const p = dParts(f), key = p.y + '-' + p.m; let g = groups.find(x => x.key === key); if (!g) { g = { key, label: MES[p.m] + ' ' + p.y, days: [] }; groups.push(g); } g.days.push(f); }
     for (const g of groups) {
-      const sec = document.createElement('div'); sec.className = 'month';
-      const h = document.createElement('h4'); h.textContent = g.label;
-      const grid = document.createElement('div'); grid.className = 'days';
+      const grid = el('div', { class: 'days' });
       for (const f of g.days) {
         const p = dParts(f), c = S.conteo[f] || 0;
-        const b = document.createElement('button'); b.type = 'button';
-        b.className = 'day' + (c ? ' has' : '') + (f === hoy ? ' is-today' : '') + (f > hoy ? ' future' : '');
-        b.setAttribute('aria-pressed', String(f === S.selDay));
-        b.setAttribute('aria-label', `${fechaLarga(f)}: ${c} ingresos`);
-        b.innerHTML = `<span class="wd">${WD[p.wd]}</span><span class="d">${p.d}</span><span class="c">${c}</span>`;
-        b.addEventListener('click', () => { S.selDay = f; render(); loadDay(true); });
-        grid.appendChild(b);
+        const b = el('button', { type: 'button', class: 'day' + (c ? ' has' : '') + (f === S.hoy ? ' is-today' : '') + (f > S.hoy ? ' future' : ''), 'aria-pressed': String(f === S.selDay), 'aria-label': `${fechaLarga(f)}: ${c} ingresos` },
+          el('span', { class: 'wd', text: WD[p.wd] }), el('span', { class: 'd', text: String(p.d) }), el('span', { class: 'c', text: String(c) }));
+        b.addEventListener('click', () => { S.selDay = f; $('#dayFilter').value = ''; render(); loadDay(true); });
+        grid.append(b);
       }
-      sec.append(h, grid); months.appendChild(sec);
+      months.append(el('div', { class: 'month' }, el('h4', { text: g.label }), grid));
     }
     renderDay();
   }
-
+  async function loadDay(showLoading) {
+    const f = S.selDay; if (!f || !isAdmin()) return;
+    if (showLoading && S.dia.fecha !== f) { S.dia = { fecha: f, rows: [], loaded: false }; renderDay(); }
+    try {
+      const rows = await api('jornada', { fecha: f }, { ms: 25000 });
+      if (S.selDay !== f) return;
+      S.dia = { fecha: f, rows, loaded: true }; renderDay();
+    } catch (err) {
+      if (S.dia.fecha === f && !S.dia.loaded) { S.dia.loaded = true; S.dia.error = errMsg(err); renderDay(); }
+    }
+  }
   function renderDay() {
     const f = S.selDay; if (!f) return;
     const all = S.dia.fecha === f ? S.dia.rows : [];
     const q = $('#dayFilter').value.trim().toLowerCase(), qn = normNum(q);
-    const rows = q ? all.filter(e => (qn && e.num.includes(qn)) || e.nombre.toLowerCase().includes(q)) : all;
+    const rows = q ? all.filter(e => (qn && e.num.includes(qn)) || e.nombre.toLowerCase().includes(q) || (e.por || '').toLowerCase().includes(q)) : all;
     $('#dayTitle').textContent = fechaLarga(f);
     $('#daySub').textContent = `${all.length} ingreso${all.length === 1 ? '' : 's'}` + (q ? ` · ${rows.length} coinciden` : '');
     const tb = $('#dayRows'); tb.innerHTML = '';
-    for (const e of rows) {
-      const tr = document.createElement('tr');
-      const c1 = document.createElement('td'); c1.className = 'n'; c1.textContent = fmtNum(e.num);
-      const c2 = document.createElement('td'); c2.textContent = e.nombre;
-      const c3 = document.createElement('td'); c3.className = 't'; c3.textContent = hora(e.ts);
-      const c4 = document.createElement('td'); c4.textContent = e.puesto;
-      tr.append(c1, c2, c3, c4); tb.appendChild(tr);
-    }
-    const empty = $('#dayEmpty');
-    empty.hidden = rows.length > 0;
-    empty.innerHTML = !(S.dia.fecha === f && S.dia.loaded) ? '<b>Cargando registros…</b>'
-      : q ? '<b>Sin coincidencias</b>Prueba con otro número o nombre.'
-      : '<b>Sin ingresos en esta jornada</b>Cuando alguien entre esa noche aparecerá aquí con su hora.';
-    $('#btnXlsDia').disabled = all.length === 0;
+    for (const e of rows) tb.append(el('tr', null, el('td', { class: 'n', text: fmtNum(e.num) }), el('td', { text: e.nombre }), el('td', { class: 't', text: hora(e.ts) }), el('td', { text: e.por || '' })));
+    const empty = $('#dayEmpty'); empty.hidden = rows.length > 0; empty.innerHTML = '';
+    const loaded = S.dia.fecha === f && S.dia.loaded;
+    if (!loaded) empty.append(el('b', { text: 'Cargando registros…' }));
+    else if (S.dia.error && !all.length) empty.append(el('b', { text: 'No se pudo cargar' }), S.dia.error);
+    else if (q) empty.append(el('b', { text: 'Sin coincidencias' }), 'Prueba con otro número o nombre.');
+    else empty.append(el('b', { text: 'Sin ingresos en esta jornada' }), 'Cuando alguien entre esa noche aparecerá aquí con su hora.');
+    $('#btnXlsDia').disabled = !loaded;
   }
   $('#dayFilter').addEventListener('input', renderDay);
+
+  // ---------- Excel ----------
+  async function descargar(body, nombre, btn) {
+    const txt = btn.textContent; btn.disabled = true; btn.textContent = 'Preparando…';
+    try {
+      const blob = await api('excel', body, { blob: true, ms: 90000 });
+      const url = URL.createObjectURL(blob);
+      const a = el('a', { href: url, download: nombre }); document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+      toast('Excel descargado: ' + nombre);
+    } catch (err) { if (err.code !== 'sesion') toast(errMsg(err)); }
+    finally { btn.disabled = false; btn.textContent = txt; }
+  }
+  $('#btnXlsDia').addEventListener('click', e => descargar({ fecha: S.selDay }, `Ruta-Navidena-ingresos-${S.selDay}.xlsx`, e.currentTarget));
+  $('#btnXlsGeneral').addEventListener('click', e => descargar({}, `Ruta-Navidena-ingresos-general-${S.hoy}.xlsx`, e.currentTarget));
 
   // ---------- Buscar ----------
   $('#inBuscar').addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g, ''); });
@@ -611,84 +799,195 @@ tr:last-child td{border-bottom:0}
     e.preventDefault();
     const n = normNum($('#inBuscar').value), out = $('#buscarOut');
     if (!n) return;
-    out.innerHTML = '<div class="empty"><b>Buscando…</b></div>';
+    out.innerHTML = ''; out.append(el('div', { class: 'empty' }, el('b', { text: 'Buscando…' })));
     try {
-      const d = await rpc('consultar_boleta', { p_clave: S.clave, p_num: n });
+      const d = await api('consultar', { num: n });
       out.innerHTML = '';
-      const card = document.createElement('div'); card.className = 'card';
-      const tag = document.createElement('span');
-      const h = document.createElement('h3'); h.textContent = 'N.° ' + fmtNum(n);
+      const card = el('div', { class: 'card' });
       if (d.estado === 'usada') {
-        tag.className = 'tag used'; tag.textContent = 'Ya ingresó · boleta usada';
-        const dl = document.createElement('dl'); dl.className = 'kv';
-        const add = (k, v) => { const dt = document.createElement('dt'); dt.textContent = k; const dd = document.createElement('dd'); dd.textContent = v; dl.append(dt, dd); };
-        add('Nombre', d.nombre); add('Jornada', fechaLarga(d.jornada)); add('Hora de ingreso', hora(d.ts)); add('Puesto', d.puesto || '—');
-        card.append(tag, h, dl);
-        if (S.rol === 'admin') {
-          const btn = document.createElement('button'); btn.className = 'btn danger sm'; btn.style.marginTop = '16px'; btn.textContent = 'Anular este ingreso';
+        const dl = el('dl', { class: 'kv' });
+        const add = (k, v) => dl.append(el('dt', { text: k }), el('dd', { text: v }));
+        add('Nombre', d.nombre); add('Jornada', fechaLarga(d.jornada)); add('Hora de ingreso', hora(d.ts)); add('Registrado por', d.por || '—');
+        card.append(el('span', { class: 'tag used', text: 'Ya ingresó · boleta usada' }), el('h3', { text: 'N.° ' + fmtNum(n) }), dl);
+        if (isAdmin()) {
+          const btn = el('button', { class: 'btn danger sm', type: 'button', style: 'margin-top:16px', text: 'Anular este ingreso' });
           btn.addEventListener('click', () => {
-            const c = document.createElement('div'); c.className = 'confirm';
-            const txt = document.createElement('span'); txt.textContent = 'Esto borra el registro y la boleta vuelve a quedar disponible. Úsalo solo si se digitó mal.';
-            const yes = document.createElement('button'); yes.className = 'btn danger sm'; yes.textContent = 'Sí, anular';
-            const no = document.createElement('button'); no.className = 'btn dark sm'; no.textContent = 'Cancelar';
-            no.addEventListener('click', () => { c.remove(); card.appendChild(btn); });
+            const yes = el('button', { class: 'btn danger sm', type: 'button', text: 'Sí, anular' });
+            const no = el('button', { class: 'btn dark sm', type: 'button', text: 'Cancelar' });
+            const c = el('div', { class: 'confirm' }, el('span', { text: 'Esto borra el ingreso y la boleta vuelve a quedar disponible. Úsalo solo si se digitó mal. Queda constancia de quién lo anuló.' }), yes, no);
+            no.addEventListener('click', () => { c.replaceWith(btn); });
             yes.addEventListener('click', async () => {
               yes.disabled = true;
-              try { await rpc('anular_ingreso', { p_clave: S.clave, p_num: n }); toast(`Ingreso de la boleta ${fmtNum(n)} anulado`); refresh(); $('#formBuscar').requestSubmit(); }
-              catch (err) { toast(errMsg(err)); yes.disabled = false; }
+              try { await api('anular', { num: n }); toast(`Ingreso de la boleta ${fmtNum(n)} anulado`); refresh(true); $('#formBuscar').requestSubmit(); }
+              catch (err) { if (err.code !== 'sesion') toast(errMsg(err)); yes.disabled = false; }
             });
-            c.append(txt, yes, no); btn.remove(); card.appendChild(c);
+            btn.replaceWith(c);
           });
-          card.appendChild(btn);
+          card.append(btn);
         }
       } else {
-        tag.className = 'tag free'; tag.textContent = 'No ha ingresado';
-        const p = document.createElement('p'); p.style.cssText = 'margin:0;color:var(--muted)';
-        p.textContent = 'Esta boleta no tiene ningún ingreso registrado. Puede usarse una vez, en cualquier jornada.';
-        card.append(tag, h, p);
+        card.append(el('span', { class: 'tag free', text: 'No ha ingresado' }), el('h3', { text: 'N.° ' + fmtNum(n) }),
+          el('p', { style: 'margin:0;color:var(--muted)', text: 'Esta boleta no tiene ningún ingreso registrado. Puede usarse una vez, en cualquier jornada.' }));
       }
-      out.appendChild(card);
+      out.append(card);
     } catch (err) {
-      if (handleAuthError(err)) return;
-      out.innerHTML = ''; const d = document.createElement('div'); d.className = 'notice bad'; d.textContent = errMsg(err); out.appendChild(d);
+      if (err.code === 'sesion') return;
+      out.innerHTML = ''; out.append(el('div', { class: 'notice bad', text: errMsg(err) }));
     }
   });
 
-  // ---------- Excel ----------
-  const COLS = ['N.° boleta', 'Nombre', 'Jornada', 'Hora de ingreso', 'Puesto'];
-  const toRow = e => ({ 'N.° boleta': fmtNum(e.num), 'Nombre': e.nombre, 'Jornada': e.jornada, 'Hora de ingreso': hora(e.ts), 'Puesto': e.puesto });
-  function sheet(rows) { const ws = XLSX.utils.json_to_sheet(rows, { header: COLS }); ws['!cols'] = COLS.map(c => ({ wch: c === 'Nombre' ? 32 : c === 'Puesto' ? 26 : 16 })); return ws; }
-  function okXlsx() { if (typeof XLSX === 'undefined') { toast('No se pudo cargar el generador de Excel. Revisa la conexión y recarga.'); return false; } return true; }
-  $('#btnXlsDia').addEventListener('click', () => {
-    if (!okXlsx()) return;
-    const f = S.selDay, rows = [...S.dia.rows].sort((a, b) => new Date(a.ts) - new Date(b.ts)).map(toRow);
-    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, sheet(rows), 'Ingresos ' + f);
-    XLSX.writeFile(wb, `Ruta-Navidena-ingresos-${f}.xlsx`);
+  // ---------- Usuarios ----------
+  const slug = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  function sugerirUsuario(nombre) {
+    const p = slug(nombre).split(' ').filter(Boolean);
+    if (!p.length) return '';
+    let u = p[0] + (p[1] ? '.' + p[1] : '');
+    return u.slice(0, 30);
+  }
+  function generarClave() {
+    const w = ['farol', 'jirafa', 'cebra', 'leon', 'loro', 'pino', 'nieve', 'estrella', 'campana', 'luna', 'tigre', 'mango', 'rio', 'canela', 'bambu', 'cometa', 'brisa', 'coco', 'vela', 'nube'];
+    const a = new Uint32Array(3); crypto.getRandomValues(a);
+    return `${w[a[0] % w.length]}-${w[a[1] % w.length]}-${100 + (a[2] % 900)}`;
+  }
+  let usuarioTocado = false;
+  $('#nuNombre').addEventListener('input', () => { if (!usuarioTocado) $('#nuUsuario').value = sugerirUsuario($('#nuNombre').value); });
+  $('#nuUsuario').addEventListener('input', e => { usuarioTocado = !!e.target.value; e.target.value = e.target.value.toLowerCase().replace(/\s+/g, '.'); });
+  $('#nuGen').addEventListener('click', () => { $('#nuPass').value = generarClave(); });
+  $('#nuRol').addEventListener('click', e => {
+    const b = e.target.closest('[data-rol]'); if (!b) return;
+    S.nuRol = b.dataset.rol;
+    $('#nuRol').querySelectorAll('[data-rol]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    $('#nuRolHint').textContent = S.nuRol === 'admin' ? 'Todo lo del portero, más Jornadas, Excel, anular ingresos y administrar usuarios.' : 'Registra ingresos y busca boletas.';
   });
-  $('#btnXlsGeneral').addEventListener('click', async () => {
-    if (!okXlsx()) return;
-    const btn = $('#btnXlsGeneral'); btn.disabled = true; btn.textContent = 'Preparando Excel…';
+
+  function credCard(titulo, usuario, pass) {
+    const copiar = el('button', { class: 'btn dark sm', type: 'button', text: 'Copiar datos' });
+    const texto = `Control Ruta Navideña\nEnlace: ${location.origin}\nUsuario: ${usuario}\nContraseña: ${pass}`;
+    copiar.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(texto); toast('Datos copiados. Pégalos en WhatsApp para enviárselos.'); }
+      catch (e) { toast('No se pudo copiar. Selecciona el texto y cópialo a mano.'); }
+    });
+    const dl = el('dl', null, el('dt', { text: 'Enlace' }), el('dd', { text: location.origin }), el('dt', { text: 'Usuario' }), el('dd', { text: usuario }), el('dt', { text: 'Contraseña' }), el('dd', { text: pass }));
+    return el('div', { class: 'cred' }, el('h4', { text: titulo }), dl, copiar);
+  }
+
+  $('#formNuevo').addEventListener('submit', async e => {
+    e.preventDefault();
+    const nombre = $('#nuNombre').value.trim(), usuario = $('#nuUsuario').value.trim(), password = $('#nuPass').value;
+    const msg = $('#nuMsg'); msg.hidden = true; msg.innerHTML = '';
+    const fail = t => { msg.hidden = false; msg.append(el('div', { class: 'notice warn', style: 'margin:12px 0 0', text: t })); };
+    if (!nombre) return fail('Escribe el nombre completo.');
+    if (!usuario) return fail('Escribe el usuario.');
+    if (password.length < 6) return fail(MSG.clave_corta);
+    const btn = $('#nuBtn'); btn.disabled = true; btn.textContent = 'Creando…';
     try {
-      const todos = await rpc('listar_todo', { p_clave: S.clave }, 30000);
-      const porDia = {}; for (const e of todos) porDia[e.jornada] = (porDia[e.jornada] || 0) + 1;
-      const resumen = DIAS.map(f => ({ 'Jornada': f, 'Día': fechaLarga(f), 'Ingresos': porDia[f] || 0 }));
-      resumen.push({ 'Jornada': 'TOTAL', 'Día': '', 'Ingresos': todos.length });
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(resumen); ws['!cols'] = [{ wch: 14 }, { wch: 30 }, { wch: 12 }];
-      XLSX.utils.book_append_sheet(wb, ws, 'Resumen por jornada');
-      XLSX.utils.book_append_sheet(wb, sheet(todos.map(toRow)), 'Todos los ingresos');
-      XLSX.writeFile(wb, `Ruta-Navidena-ingresos-general-${jornadaDe(Date.now())}.xlsx`);
-    } catch (err) { if (!handleAuthError(err)) toast(errMsg(err)); }
-    finally { btn.disabled = false; btn.textContent = 'Descargar Excel general'; }
+      const u = await api('crear_usuario', { nombre, usuario, password, rol: S.nuRol });
+      msg.hidden = false;
+      msg.append(credCard(`${u.nombre} creado como ${u.rol === 'admin' ? 'administrador' : 'portero'}`, u.usuario, password));
+      $('#nuNombre').value = ''; $('#nuUsuario').value = ''; $('#nuPass').value = ''; usuarioTocado = false;
+      loadUsuarios();
+    } catch (err) { if (err.code !== 'sesion') fail(errMsg(err)); }
+    finally { btn.disabled = false; btn.textContent = 'Crear usuario'; }
   });
+
+  async function loadUsuarios() {
+    if (!isAdmin()) return;
+    if (!S.usuarios.length) { $('#usEmpty').hidden = false; }
+    try { S.usuarios = await api('usuarios'); renderUsuarios(); }
+    catch (err) { if (err.code !== 'sesion') { $('#usEmpty').hidden = false; $('#usEmpty').innerHTML = ''; $('#usEmpty').append(el('b', { text: 'No se pudo cargar' }), errMsg(err)); } }
+  }
+  $('#usReload').addEventListener('click', loadUsuarios);
+
+  function renderUsuarios() {
+    const tb = $('#usRows'); tb.innerHTML = '';
+    $('#usEmpty').hidden = S.usuarios.length > 0;
+    const act = S.usuarios.filter(u => u.activo);
+    const np = act.filter(u => u.rol === 'portero').length, na = act.filter(u => u.rol === 'admin').length;
+    $('#usSub').textContent = `Activos: ${np} ${np === 1 ? 'portero' : 'porteros'} y ${na} ${na === 1 ? 'administrador' : 'administradores'}`;
+    for (const u of S.usuarios) {
+      const yo = S.user && u.id === S.user.id;
+      const editar = el('button', { class: 'link', type: 'button', text: S.editId === u.id ? 'Cerrar' : 'Editar' });
+      editar.addEventListener('click', () => { S.editId = S.editId === u.id ? null : u.id; renderUsuarios(); });
+      const last = u.ultimo_acceso ? fechaHoraFmt.format(new Date(u.ultimo_acceso)) : 'Nunca';
+      tb.append(el('tr', { class: 'urow' + (u.activo ? '' : ' off') },
+        el('td', { class: 'ucell' }, el('b', { text: u.nombre + (yo ? ' (tú)' : '') }), el('span', { text: u.usuario })),
+        el('td', { class: 'meta' }, el('span', { class: 'metas' },
+          el('span', { class: 'role ' + u.rol, text: u.rol === 'admin' ? 'Admin' : 'Portero' }),
+          el('span', { class: 'state ' + (u.activo ? 'on' : 'off'), text: u.activo ? 'Activo' : 'Desactivado' }))),
+        el('td', { class: 'meta t' }, el('span', { class: 'metas', text: u.ingresos + ' ingresos' })),
+        el('td', { class: 'meta t last' }, el('span', { class: 'metas', text: last })),
+        el('td', { class: 'acc' }, editar)));
+      if (S.editId === u.id) tb.append(el('tr', { class: 'erow' }, el('td', { colspan: '5' }, editor(u, yo))));
+    }
+  }
+
+  function editor(u, yo) {
+    const fNombre = el('input', { class: 'din', value: u.nombre, maxlength: '80' });
+    const fUsuario = el('input', { class: 'din mono', value: u.usuario, maxlength: '30', autocapitalize: 'none', spellcheck: 'false' });
+    const fRol = el('select', { class: 'din' }, el('option', { value: 'portero', text: 'Portero' }), el('option', { value: 'admin', text: 'Administrador' }));
+    fRol.value = u.rol; if (yo) fRol.disabled = true;
+    const fPass = el('input', { class: 'din mono', placeholder: 'Dejar vacío para no cambiarla', maxlength: '100', autocapitalize: 'none', spellcheck: 'false' });
+    const gen = el('button', { class: 'btn dark sm', type: 'button', text: 'Generar' });
+    gen.addEventListener('click', () => { fPass.value = generarClave(); });
+    const fActivo = el('input', { type: 'checkbox' }); fActivo.checked = u.activo; if (yo) fActivo.disabled = true;
+    const guardar = el('button', { class: 'btn lantern sm', type: 'button', text: 'Guardar cambios' });
+    const cancelar = el('button', { class: 'btn dark sm', type: 'button', text: 'Cancelar' });
+    const msg = el('div', { style: 'grid-column:1/-1' });
+    cancelar.addEventListener('click', () => { S.editId = null; renderUsuarios(); });
+    guardar.addEventListener('click', async () => {
+      msg.innerHTML = '';
+      const body = { id: u.id };
+      if (fNombre.value.trim() !== u.nombre) body.nombre = fNombre.value.trim();
+      if (fUsuario.value.trim().toLowerCase() !== u.usuario) body.usuario = fUsuario.value.trim();
+      if (!yo && fRol.value !== u.rol) body.rol = fRol.value;
+      if (!yo && fActivo.checked !== u.activo) body.activo = fActivo.checked;
+      if (fPass.value) { if (fPass.value.length < 6) { msg.append(el('div', { class: 'notice warn', style: 'margin:0', text: MSG.clave_corta })); return; } body.password = fPass.value; }
+      if (Object.keys(body).length === 1) { S.editId = null; renderUsuarios(); return; }
+      guardar.disabled = true; guardar.textContent = 'Guardando…';
+      try {
+        await api('editar_usuario', body);
+        S.editId = null;
+        const nuevoUsuario = body.usuario ? body.usuario.toLowerCase() : u.usuario;
+        await loadUsuarios();
+        if (body.password) {
+          const box = $('#nuMsg'); box.hidden = false; box.innerHTML = '';
+          box.append(credCard(`Nueva contraseña de ${body.nombre || u.nombre}`, nuevoUsuario, body.password));
+          box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        toast(body.activo === false ? `${u.nombre} desactivado. Su sesión se cerró.` : 'Cambios guardados');
+        if (yo) validarSesion();
+      } catch (err) {
+        if (err.code === 'sesion') return;
+        guardar.disabled = false; guardar.textContent = 'Guardar cambios';
+        msg.append(el('div', { class: 'notice warn', style: 'margin:0', text: errMsg(err) }));
+      }
+    });
+    const row = (label, ...kids) => el('div', { class: 'row form' }, el('label', { text: label }), ...kids);
+    return el('div', { class: 'editbox' },
+      row('Nombre completo', fNombre),
+      row('Usuario', fUsuario),
+      row('Rol', fRol),
+      row('Nueva contraseña', el('div', { class: 'inrow' }, fPass, gen)),
+      el('div', { class: 'row form' }, el('label', { class: 'check' }, fActivo, document.createTextNode(yo ? 'Activo (no puedes desactivarte)' : 'Usuario activo (puede entrar)'))),
+      msg,
+      el('div', { class: 'btns' }, guardar, cancelar));
+  }
 
   // ---------- Arranque ----------
   function wake() { try { navigator.wakeLock && navigator.wakeLock.request('screen').catch(() => {}); } catch (e) {} }
+  $('#inUsuario').value = LS.get('lastUser', '');
   inNum.value = LS.get('draftNum', '');
-  paintWho(); setStep('num'); render();
+  const chk = LS.get('draftChecked', '');
+  if (chk && normNum(inNum.value) === chk) {
+    S.checked = chk; inNombre.value = LS.get('draftNombre', '');
+    showResult(result, 'info', '✓', `Boleta ${fmtNum(chk)} verificada`, 'Termina de escribir el nombre y registra el ingreso.');
+    setStep('free');
+  } else { S.solicitud = ''; setStep('num'); }
+  $('#salirBox').append(btnSalirNuevo());
+  paintMe(); renderTop(); renderFeed();
   showView(S.view);
-  if (loggedIn()) refresh(); else setConn('');
-  setInterval(render, 60000);
+  if (S.token) { validarSesion(); refresh(true); }
+  setInterval(() => { if (S.token) renderTop(); }, 60000);
   wake();
 })();
 </script>

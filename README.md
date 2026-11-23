@@ -2,52 +2,55 @@
 
 Sistema web para registrar el ingreso al evento **La Ruta Navideña** (Cajasan Guarigua, del 26 de noviembre al 11 de enero) a partir del número de la boleta. Corre completo en **Railway**: un servidor Node que sirve la página y una base de datos PostgreSQL.
 
-- El portero escribe el número y el sistema dice si la boleta está **disponible** o **ya fue usada** (con día, hora, nombre y puerta).
-- Si está disponible, escribe el nombre de la persona y registra. Cada boleta sirve **una sola vez**, cualquier día.
-- Si dos puertas digitan la misma boleta al mismo tiempo, solo una la registra (lo garantiza la base de datos).
-- **Jornadas:** calendario con el conteo por noche, lista de cada día, filtro y Excel del día o general.
-- **Buscar boleta:** quién entró con ella, cuándo y por qué puerta. El administrador puede anular un ingreso mal digitado.
-- Lo que entra antes de las 6:00 a. m. cuenta para la noche anterior.
-- Nada se pierde al recargar: los ingresos están en la base de datos, y la sesión y lo que se estaba escribiendo quedan guardados en el celular.
+## Qué hace
 
-## Archivos
-
-| Archivo | Qué es |
+| Rol | Puede |
 |---|---|
-| `server.js` | Servidor: API, claves de acceso y creación automática de la tabla |
-| `public/index.html` | La página |
-| `public/config.js` | Fechas del evento |
+| **Portero** | Registrar ingresos y buscar boletas |
+| **Administrador** | Todo lo del portero, más ver Jornadas, descargar Excel, anular ingresos y administrar usuarios |
+
+- Cada persona entra con **su usuario y su contraseña**. Cada ingreso queda firmado con el nombre de quien lo registró.
+- Cada boleta sirve **una sola vez**, cualquier noche. Si dos puertas digitan la misma boleta al mismo tiempo, la base de datos solo deja pasar una.
+- Si se corta la señal en el momento de registrar y el portero vuelve a tocar "Registrar", no se duplica.
+- La sesión queda abierta en el celular hasta tocar **Cerrar sesión**. Recargar o cerrar la página no borra nada; lo que se estaba escribiendo también se conserva.
+- **Jornadas:** calendario con el conteo por noche, lista de cada día con filtro, **Excel de ese día** y **Excel general** del evento.
+- Lo que entra antes de las 6:00 a. m. cuenta para la noche anterior.
+- Anular un ingreso deja constancia en la tabla `anulaciones` (qué boleta, a nombre de quién estaba y quién la anuló).
 
 ## Despliegue en Railway
 
-1. En [railway.com](https://railway.com) → **New Project → Deploy from GitHub repo** → elige este repositorio.
+1. **New Project → Deploy from GitHub repo** → este repositorio.
 2. En el mismo proyecto: **+ Create → Database → PostgreSQL**.
-3. En el servicio de la app, pestaña **Variables**, agrega:
+3. En el servicio de la app, pestaña **Variables**:
 
    | Variable | Valor |
    |---|---|
-   | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` (referencia a la base de datos) |
-   | `CLAVE_PORTEROS` | la clave que usarán los porteros |
-   | `CLAVE_ADMIN` | tu clave de administrador (permite anular ingresos) |
+   | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` |
+   | `ADMIN_PASSWORD` | contraseña del primer administrador (si no está, se usa `CLAVE_ADMIN`) |
+   | `ADMIN_USUARIO` | opcional, por defecto `admin` |
 
-4. Pestaña **Settings → Networking → Generate Domain** para obtener el enlace público.
-5. Al arrancar, el servidor crea la tabla solo. No hay que ejecutar SQL.
+4. **Settings → Networking → Generate Domain** (puerto 8080).
 
-Cada push a `main` se vuelve a desplegar solo.
+El servidor crea las tablas solo al arrancar. El primer administrador se crea **únicamente si no existe ningún usuario**; después todo se maneja desde la pestaña **Usuarios**.
 
-## Prueba antes del evento
-Con dos celulares: registra una boleta en uno, intenta usarla en el otro (debe salir en rojo) y luego anúlala entrando con la clave de administrador en **Buscar boleta**.
+## Primer uso
 
-## Uso diario
-- Cada portero entra con la clave de porteros y el nombre de su puesto (por ejemplo, "Puerta principal · Carlos"). El celular lo recuerda hasta tocar **Salir**.
-- Para cambiar una clave, cámbiala en **Variables** de Railway. Todos tendrán que volver a entrar.
-- Tras 10 claves incorrectas desde una misma conexión, el servidor bloquea esa conexión 10 minutos.
+1. Entra con el usuario `admin` y la contraseña de `ADMIN_PASSWORD` (o `CLAVE_ADMIN`).
+2. En **Usuarios** crea tu propio administrador y los porteros. Al crear cada uno aparece una tarjeta con enlace, usuario y contraseña, con un botón para copiarla y mandarla por WhatsApp.
+3. Si quieres, desactiva después el usuario `admin`.
+
+## Manejo de usuarios
+- **Editar** permite cambiar nombre, usuario, rol, contraseña y si está activo.
+- Al cambiar la contraseña, el rol o desactivar a alguien, sus sesiones se cierran de inmediato.
+- No se puede desactivar ni quitar el rol al último administrador activo, ni a uno mismo.
+- Los usuarios no se borran (sus ingresos quedan firmados); se desactivan.
+- Tras 8 contraseñas erradas seguidas para un usuario desde una misma conexión, ese intento queda bloqueado 10 minutos.
 
 ## Probar en tu computador
 
 ```bash
 npm install
-DATABASE_URL=postgres://usuario:clave@localhost:5432/basedatos CLAVE_PORTEROS=puerta CLAVE_ADMIN=jefe npm start
+DATABASE_URL=postgres://usuario:clave@localhost:5432/basedatos ADMIN_PASSWORD=una-clave PGSSL=off npm start
 # abre http://localhost:3000
 ```
 
